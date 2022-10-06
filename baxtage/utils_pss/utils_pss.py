@@ -66,7 +66,7 @@ def get_from_ods_sheet(ods_file, sheet, meta=True,
 
 
 class sheet_obj:
-    def __init__(self, ods_file, sheet, input_format='ods', meta=True, headers=True):
+    def __init__(self, ods_file, sheet, meta=True, headers=True):
         sheet_data = get_from_ods_sheet(ods_file, sheet, meta=meta, headers=headers)
         sheet_list = [{k: v} for k, v in sheet_data.items() if k[0] != '_']
         for entry in sheet_list:
@@ -75,18 +75,14 @@ class sheet_obj:
 
 
 class Importer:
-    def __init__(self, ods_file, input_format='ods'):
+    def __init__(self, ods_file):
         def get_workbook(self):
             wkbook = get_data(ods_file)
             for sheet in wkbook.keys():
-                sheet_thingie = sheet_obj(ods_file, sheet, input_format=input_format)
+                sheet_thingie = sheet_obj(ods_file, sheet)
                 setattr(self, sheet, sheet_thingie)
-
         get_workbook(self)
 
-
-def testy(in_file):
-    return get_data(in_file)
 
 
 def toPascal(x):  # LikeThis
