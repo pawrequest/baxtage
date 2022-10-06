@@ -12,41 +12,57 @@ def printel(*els):  # elementtree elements
         for elem in el.iter():
             print(elem.tag, elem.text)
 
+
 def strip_strings(rows):
     for c, cell in enumerate(rows):
-        if isinstance(cell,str):
+        if isinstance(cell, str):
             newcell = cell.strip('')
             rows[c] = newcell
     return rows
 
-def get_from_ods(wkbook, sheet,
-                 output='dict'):  # takes the name of a sheet, headers(bool) and output(list of lists or dict)
+
+def get_from_ods(wkbook, sheet, meta=False,
+                 headers=False):  # takes workbook, sheetname, meta and headers as bools, gives dict)
     wkbook = get_data(wkbook)
     rows = wkbook[sheet]
     rows = [row for row in rows if len(row) > 0]
-    rows = strip_strings(rows)
-    meta = [cell for cell in rows[0]]
-    headers = [cell for cell in rows[1]]
-    body = [cell for cell in rows[2:]]
-    out_dict = {}
-    meta_dict = {}
-    for c, field in enumerate(meta):
-        if field:
-            if c == 0 or c%2==0:
-                op = {field:meta[c+1]}
-                meta_dict.update(op)
-    out_dict.update({'meta':meta_dict})
+    rows = strip_strings(rows)  # remove leading and trailing whitepsace from any string fields
+    if meta and headers:
+        meta = [cell for cell in rows[0]]
+        headers = [cell for cell in rows[1]]
+        body = [cell for cell in rows[2:]]
+    elif headers:
+        headers = [cell for cell in rows[0]]
+        body = [cell for cell in rows[1:]]
+    elif meta:
+        meta = [cell for cell in rows[0]]
+        body = [cell for cell in rows[1:]]
+    else:
+        body = [cell for cell in rows[0:]]
 
-    # first cell is not 'col' so we assume first row is headers
+    out_dict = {}
+    if meta:
+        meta_dict = {}
+        for c, field in enumerate(meta):
+            if field:
+                if c == 0 or c % 2 == 0:        # if there is text in a cell, and that cell is either the first or an even numbered one
+                    op = {field: meta[c + 1]}   # then it is a meta-heading, so use as a key and the next cell as a value
+                    meta_dict.update(op)        # and add to the meta key in dict
+        out_dict.update({'meta': meta_dict})
+
     for row in body:
         row_dict = {}
-        fields = [field for field in row if len(row)>0] # if row has items put them in a list called fields
+        fields = [field for field in row if len(row) > 0]  # if row has items put them in a list called fields
         for c, field in enumerate(fields):
-            k = headers[c] # for each field in list get output_dict key key from headers at same index
-            if isinstance(field,str):   # if the field content is a string strip whitespace
-                field = field.strip()
-            row_dict.update({k:field})
-        out_dict.update({row[0]:row_dict})
+            if headers:
+                k = headers[c]  # for each field in list get output_dict key key from headers at same index
+                row_dict.update({k: field})
+            else:
+                for d, field in enumerate(fields[1:]):
+                    k = fields[0]
+                    row_dict.update({k: field})
+
+        out_dict.update({row[0]: row_dict})
     return out_dict  # #, rows # does it need a list of rows?
 
 

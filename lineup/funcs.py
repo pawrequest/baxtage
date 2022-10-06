@@ -6,9 +6,7 @@ class Importer:
     def get_data(self):
         inform = self.input_format
         if inform == 'ods':
-            self.perf_dict = get_from_ods(r'E:\Dev\baxtage\lineup\static\baxtage.ods', 'performances')
-
-            ... # go get ods stuff
+            self.perf_dict = get_from_ods(r'E:\Dev\baxtage\lineup\static\baxtage.ods', 'performances', meta=True, headers=True)
         elif inform == ' excel':
             ... # go get excel
         elif inform == ' email':
