@@ -35,7 +35,7 @@ class Act(models.Model):  # act is a table of artists?
 class TechRider(models.Model):
     tour_eng = models.ForeignKey('Crew', on_delete=models.CASCADE)
     mixer = models.CharField(max_length=50, blank=True, null=True)
-
+    spec_sheet = models.FileField(default=None, blank=True, null=True)
 
 class HospitalityRider(models.Model):
     pass
@@ -51,8 +51,8 @@ class Performance(models.Model):
     start_time = models.DateTimeField()
     finish_time = models.DateTimeField()
     act = models.ForeignKey('Act', on_delete=models.CASCADE)
-    tech = models.ForeignKey('TechRider', on_delete=models.CASCADE, blank=True, null=True)
-    hospitality = models.ForeignKey('HospitalityRider', on_delete=models.CASCADE, blank=True, null=True)
+    tech_brief = models.TextField(blank=True,null=True)
+    hospitality_brief = models.TextField(blank=True,null=True)
 
 
 class Show(models.Model):
