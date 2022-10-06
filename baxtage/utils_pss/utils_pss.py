@@ -52,18 +52,17 @@ def get_from_ods(wkbook, sheet, meta=False,
 
     for row in body:
         row_dict = {}
-        fields = [field for field in row if len(row) > 0]  # if row has items put them in a list called fields
+        fields = [field for field in row if len(row) > 0]
         for c, field in enumerate(fields):
-            if headers:
-                k = headers[c]  # for each field in list get output_dict key key from headers at same index
+            if headers:                         # if we have headers
+                k = headers[c]                  # then use them as keys
                 row_dict.update({k: field})
             else:
                 for d, field in enumerate(fields[1:]):
-                    k = fields[0]
+                    k = fields[0]               # otherwise we use the first column
                     row_dict.update({k: field})
-
         out_dict.update({row[0]: row_dict})
-    return out_dict  # #, rows # does it need a list of rows?
+    return out_dict
 
 
 def toPascal(x):  # LikeThis
