@@ -7,4 +7,3 @@ from .models import *
 class PersonAdmin(admin.ModelAdmin):
     pass
 # Register your models here.
-' nothing to see'
