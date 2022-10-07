@@ -22,6 +22,7 @@ amdesp = r'E:\Dev\baxtage\lineup\static\amdespplay.ods'
 # ...
 
 imps = ImportedWkbook(baxtage_config,meta=True)
+print (imps)
 ...
 
 '''

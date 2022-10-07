@@ -21,17 +21,32 @@ def strip_strings(rows):
     return rows
 
 
-
 class ImportedWkbook:
-
     def __init__(self, ods_file, headers=True, meta=False):
         self.headersb = headers
         self.metab = meta
         self.ods_file = ods_file
         self.wkbook = get_data(ods_file)
-        self.sheets=[]
+        self.sheets = []
         for sheet in self.wkbook:
-            self.sheets.append(self.Sheet(self,sheet,meta=True))
+            # obj = self.Sheet(self, sheet_name, meta=True)
+            # setattr(self.SheetObjs, sheet_name, sheet)
+            self.sheets.append(self.Sheet(self, sheet, meta=True))
+        Objs = self.ObjectsFromSheets(self)
+
+
+
+    def __str__(self):
+        return f'Workbook Importer with {len(self.sheets)} sheets'
+    def __repr__(self):
+        return f'Workbook Importer with {len(self.sheets)} sheets'
+
+    class ObjectsFromSheets:
+        def __init__(self, parent):
+            sheets = parent.sheets
+
+            ...
+
 
     class Sheet:
         def __init__(self, parent, sheet_name, meta=False, headers=True):
@@ -46,13 +61,13 @@ class ImportedWkbook:
             self.assign_rows()
             self.get_meta()
             self.get_body()
+
         def __str__(self):
-            return self.sheet_name
-            
-            
-            # self.meta, self.headers, self.body = self.get_meta(), self.get_headers(), self.get_body()
-            ...
-            
+            return f'Sheet Object: {self.sheet_name}'
+        def __repr__(self):
+            return f'Sheet Object: {self.sheet_name}'
+
+
         def get_rows(self):  # uses get_data from pyexcel_ods3,  takes sheetname)
             wkbook = self.wkbook
             sheet_name = self.sheet_name
@@ -60,7 +75,7 @@ class ImportedWkbook:
             rows = [row for row in rows if len(row) > 0]
             rows = strip_strings(rows)  # remove leading and trailing whitepsace from any string fields
             return rows
-            
+
         def assign_rows(self):  # makles self.headers meta and body attrrs
             metab = self.metab
             headersb = self.headersb
@@ -106,7 +121,6 @@ class ImportedWkbook:
                             setattr(self, k, cell)
 
 
-
 def toPascal(x):  # LikeThis
     x = x.title()
     for y in x:
@@ -124,6 +138,7 @@ def toCamel(x):  # likeThis
             x = x.replace(i, ' ')
     s = x.lower().split()
     return s[0] + ''.join(i.capitalize() for i in s[1:])
+
 
 '''
 #
@@ -181,7 +196,6 @@ def toCamel(x):  # likeThis
 #     # return string
 '''
 
-
 # # elephant class has a memory - note the underscores
 '''
 # class Elephant:
@@ -206,7 +220,6 @@ def toCamel(x):  # likeThis
 # print(random_odd())
 # print(random_odd.memory())
 '''
-
 
 '''
 def get_from_ods_sheet(ods_file, sheet, meta=False,
@@ -253,7 +266,7 @@ def get_from_ods_sheet(ods_file, sheet, meta=False,
     return out_dict
 '''
 
-#backup impoorter class
+# backup impoorter class
 '''
 #
 # class ImportedWkbook:
@@ -315,7 +328,6 @@ def get_from_ods_sheet(ods_file, sheet, meta=False,
 #                     setattr(self, k, v)
 #
 '''
-
 
 # class Sheet:
 #     def __init__(self, ods_file, sheet, meta=True, headers=True):
