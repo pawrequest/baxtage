@@ -1,4 +1,355 @@
-from dataclasses import make_dataclass
+# import psutil
+# import win32gui
+from pyexcel_ods3 import get_data
+
+
+def printel(*els):  # elementtree elements
+    print("printel")
+    if isinstance(els, str):
+        els = [els]
+    for el in els:
+        print(el)
+        for elem in el.iter():
+            print(elem.tag, elem.text)
+
+
+def strip_strings(rows):
+    for c, cell in enumerate(rows):
+        if isinstance(cell, str):
+            newcell = cell.strip('')
+            rows[c] = newcell
+    return rows
+
+
+class ImportedWkbook:
+    def __init__(self, ods_file, headers=True, meta=False):
+        self.headersb = headers
+        self.metab = meta
+        self.ods_file = ods_file
+        self.wkbook = get_data(ods_file)
+        self.sheets = []
+        for sheet in self.wkbook:
+            # obj = self.Sheet(self, sheet_name, meta=True)
+            # setattr(self.SheetObjs, sheet_name, sheet)
+            self.sheets.append(self.Sheet(self, sheet, meta=True))
+        Objs = self.ObjectsFromSheets(self)
+
+
+
+    def __str__(self):
+        return f'Workbook Importer with {len(self.sheets)} sheets'
+    def __repr__(self):
+        return f'Workbook Importer with {len(self.sheets)} sheets'
+
+    class ObjectsFromSheets:
+        def __init__(self, parent):
+            sheets = parent.sheets
+
+            ...
+
+
+    class Sheet:
+        def __init__(self, parent, sheet_name, meta=False, headers=True):
+            self.body = None
+            self.headers = None
+            self.meta_dict = {}
+            self.metab = meta
+            self.headersb = headers
+            self.wkbook = parent.wkbook
+            self.sheet_name = sheet_name
+            self.rows = self.get_rows()
+            self.assign_rows()
+            self.get_meta()
+            self.get_body()
+
+        def __str__(self):
+            return f'Sheet Object: {self.sheet_name}'
+        def __repr__(self):
+            return f'Sheet Object: {self.sheet_name}'
+
+
+        def get_rows(self):  # uses get_data from pyexcel_ods3,  takes sheetname)
+            wkbook = self.wkbook
+            sheet_name = self.sheet_name
+            rows = wkbook[sheet_name]
+            rows = [row for row in rows if len(row) > 0]
+            rows = strip_strings(rows)  # remove leading and trailing whitepsace from any string fields
+            return rows
+
+        def assign_rows(self):  # makles self.headers meta and body attrrs
+            metab = self.metab
+            headersb = self.headersb
+            rows = self.rows
+
+            if metab and headersb:  # assign row-numbers for meta, headers, and start of body
+                meta_row, header_row, body_row = 0, 1, 2
+            elif metab:
+                meta_row, header_row, body_row = 0, None, 1
+            elif headersb:
+                meta_row, header_row, body_row = None, 0, 1
+            else:
+                meta_row, header_row, body_row = None, None, 0
+            if metab:
+                self.meta = [cell for cell in rows[meta_row]]
+            if headersb:
+                self.headers = [cell for cell in rows[header_row]]
+            self.body = [cell for cell in rows[body_row:]]
+
+        def get_meta(self):
+            if not self.meta:
+                return False
+            meta_list = self.meta
+            meta_dict = {}
+            for e, cell in enumerate(meta_list):
+                if cell:
+                    if e == 0 or e % 2 == 0:  # if there is text in a cell, and that cell is either the first or an even numbered one
+                        meta_dict.update({cell: meta_list[e + 1]})
+                        # setattr(self.meta, cell, meta_list[e + 1])
+            self.meta = meta_dict
+            return True
+
+        def get_body(self):
+            for row in self.body:
+                cells = [cell for cell in row if len(row) > 0]
+                for c, cell in enumerate(cells):
+                    if self.headers:  # if we have headers
+                        k = self.headers[c]  # then use them as keys
+                        setattr(self, k, cell)
+                    else:
+                        for d, cell in enumerate(cells[1:]):
+                            k = cells[0]  # otherwise we use the first column
+                            setattr(self, k, cell)
+
+
+def toPascal(x):  # LikeThis
+    x = x.title()
+    for y in x:
+        if not y.isalpha():
+            if not y.isnumeric():
+                x = x.replace(y, '')
+    s = x.split()
+    print("JOIN", ''.join(i.capitalize() for i in s[1:]))
+    return ''.join(i.capitalize() for i in s[1:])
+
+
+def toCamel(x):  # likeThis
+    for i in str(x):
+        if not i.isalnum():
+            x = x.replace(i, ' ')
+    s = x.lower().split()
+    return s[0] + ''.join(i.capitalize() for i in s[1:])
+
+
+'''
+#
+# def getActiveProcesses():
+#     return {p.name() for p in psutil.process_iter(["name"])}
+
+
+# def getActiveWindow():
+#     active_window_name = None
+#     try:
+#         window = win32gui.GetForegroundWindow()
+#         active_window_name = win32gui.GetWindowText(window)
+#     except:
+#         print("Could not get active window: ", sys.exc_info()[0])
+#     return active_window_name
+
+
+# def withoutKeys(d, keys):
+#     return {x: d[x] for x in d if x not in keys}
+
+
+# clean shipdict
+# needs generalising
+# def cleanDictShip(shipdict):  # if list takes first item!
+#     print("Cleaning your shipdict")
+#     newdict={}
+#     for k, v in shipdict.items():
+#         if k in com_fields: k = com_fields[k]
+#         k = toCamel(k)
+#         if isinstance(v,list):
+#             v = v[0]
+#         if v.replace(",","").isnumeric() and int(v.replace(',','')) == 0:
+#             v = None
+#         elif v.isalnum():
+#             v = v.title()
+#         newdict = {k: v for k, v in newdict.items() if v is not None and v not in ['', 0]}
+#         newdict = withoutKeys(newdict, expungedFields)
+#         newdict.update({k:v})
+#     return(newdict)
+
+
+# def unsanitise(string):
+#     string = string.replace("&amp;", chr(38)).replace("&quot;", chr(34)).replace("&apos;", chr(39)).replace("&lt;",
+#                                                                                                             chr(60)).replace(
+#         "&gt;", chr(62)).replace("&gt;", chr(32)).replace("&#", "").replace(";", "").replace(",", "")
+#     return string
+#     # string = string.replace("&amp;", chr(38))
+#     # string = string.replace("&quot;", chr(34))
+#     # string = string.replace("&apos;", chr(39))
+#     # string = string.replace("&lt;", chr(60))
+#     # string = string.replace("&gt;", chr(62))
+#     # string = string.replace("&gt;", chr(32))
+#     # string = string.replace("&#", "")
+#     # string = string.replace(";", "")
+#     # return string
+'''
+
+# # elephant class has a memory - note the underscores
+'''
+# class Elephant:
+#     def __init__(self, fnc):
+#         self._fnc = fnc
+#         self._memory = []
+#
+#     def __call__(self):
+#         retval = self._fnc()
+#         self._memory.append(retval)
+#         return retval
+#
+#     def memory(self):
+#         return self._memory
+
+
+# @Elephant
+# def random_odd():
+#     return random.choice([1, 3, 5, 7, 9])
+# print(random_odd())
+# print(random_odd.memory())
+# print(random_odd())
+# print(random_odd.memory())
+'''
+
+'''
+def get_from_ods_sheet(ods_file, sheet, meta=False,
+                       headers=False):  # takes workbook, sheetname, meta and headers as bools, gives dict)
+    wkbook = get_data(ods_file)
+    rows = wkbook[sheet]
+    rows = [row for row in rows if len(row) > 0]
+    rows = strip_strings(rows)  # remove leading and trailing whitepsace from any string fields
+    if meta and headers:
+        meta = [cell for cell in rows[0]]
+        headers = [cell for cell in rows[1]]
+        body = [cell for cell in rows[2:]]
+    elif headers:
+        headers = [cell for cell in rows[0]]
+        body = [cell for cell in rows[1:]]
+    elif meta:
+        meta = [cell for cell in rows[0]]
+        body = [cell for cell in rows[1:]]
+    else:
+        body = [cell for cell in rows[0:]]
+
+    out_dict = {}
+    if meta:
+        meta_dict = {}
+        for c, field in enumerate(meta):
+            if field:
+                if c == 0 or c % 2 == 0:  # if there is text in a cell, and that cell is either the first or an even numbered one
+                    op = {field: meta[c + 1]}  # then it is a meta-heading, so use as a key and the next cell as a value
+                    meta_dict.update(op)  # and add to the meta key in dict
+        out_dict.update({'meta': meta_dict})
+
+    for row in body:
+        row_dict = {}
+        fields = [field for field in row if len(row) > 0]
+        for c, field in enumerate(fields):
+            if headers:  # if we have headers
+                k = headers[c]  # then use them as keys
+                row_dict.update({k: field})
+            else:
+                for d, field in enumerate(fields[1:]):
+                    k = fields[0]  # otherwise we use the first column
+                    row_dict.update({k: field})
+        out_dict.update({row[0]: row_dict})
+    return out_dict
+'''
+
+# backup impoorter class
+'''
+#
+# class ImportedWkbook:
+#
+#     def __init__(self, ods_file, headers=True, meta=False):
+#         wkbook = get_data(ods_file)
+#         for sheet in wkbook.keys():
+#             sheet_thingie = self.Sheet(ods_file, self, sheet, headers=headers, meta=meta)
+#             setattr(self, sheet, sheet_thingie)
+#
+#     def get_from_ods_sheet(self, ods_file, sheet, meta=False,
+#                            headers=False):  # takes workbook, sheetname, meta and headers as bools, gives dict)
+#         wkbook = get_data(ods_file)
+#         rows = wkbook[sheet]
+#         rows = [row for row in rows if len(row) > 0]
+#         rows = strip_strings(rows)  # remove leading and trailing whitepsace from any string fields
+#         if meta and headers:
+#             meta = [cell for cell in rows[0]]
+#             headers = [cell for cell in rows[1]]
+#             body = [cell for cell in rows[2:]]
+#         elif headers:
+#             headers = [cell for cell in rows[0]]
+#             body = [cell for cell in rows[1:]]
+#         elif meta:
+#             meta = [cell for cell in rows[0]]
+#             body = [cell for cell in rows[1:]]
+#         else:
+#             body = [cell for cell in rows[0:]]
+#         out_dict = {}
+#         if meta:
+#             meta_dict = {}
+#             for c, field in enumerate(meta):
+#                 if field:
+#                     if c == 0 or c % 2 == 0:  # if there is text in a cell, and that cell is either the first or an even numbered one
+#                         op = {field: meta[
+#                             c + 1]}  # then it is a meta-heading, so use as a key and the next cell as a value
+#                         meta_dict.update(op)  # and add to the meta key in dict
+#             out_dict.update({'meta': meta_dict})
+#         for row in body:
+#             row_dict = {}
+#             fields = [field for field in row if len(row) > 0]
+#             for c, field in enumerate(fields):
+#                 if headers:  # if we have headers
+#                     k = headers[c]  # then use them as keys
+#                     row_dict.update({k: field})
+#                 else:
+#                     for d, field in enumerate(fields[1:]):
+#                         k = fields[0]  # otherwise we use the first column
+#                         row_dict.update({k: field})
+#             out_dict.update({row[0]: row_dict})
+#         self.sheets_dict = out_dict
+#
+#     class Sheet:
+#         def __init__(self, parent, ods_file, sheet, meta=False, headers=True):
+#             sheet_data = parent.get_from_ods_sheet(ods_file, sheet, meta=meta, headers=headers)
+#             sheet_list = [{k: v} for k, v in sheet_data.items() if k[0] != '_']
+#             for entry in sheet_list:
+#                 for k, v in entry.items():
+#                     setattr(self, k, v)
+#
+'''
+
+# class Sheet:
+#     def __init__(self, ods_file, sheet, meta=True, headers=True):
+#         sheet_data = get_from_ods_sheet(ods_file, sheet, meta=meta, headers=headers)
+#         sheet_list = [{k: v} for k, v in sheet_data.items() if k[0] != '_']
+#         for entry in sheet_list:
+#             for k, v in entry.items():
+#                 setattr(self, k, v)
+
+
+# class ImportedWkbook:
+#     def __init__(self, ods_file, headers=True, meta=False):
+#         def get_workbook(self):
+#             wkbook = get_data(ods_file)
+#             for sheet in wkbook.keys():
+#                 sheet_thingie = Sheet(ods_file, sheet, meta=meta, headers=headers)
+#                 setattr(self, sheet, sheet_thingie)
+#         get_workbook(self)
+#
+
+
+'''from dataclasses import make_dataclass
 
 Position = make_dataclass('Position',['name','long','lat'])
 oslo = Position('osloo','112','444')
@@ -11,3 +362,4 @@ Noma = make_dataclass(name,attrs)
 nmoa = Noma()
 ...
 
+'''
