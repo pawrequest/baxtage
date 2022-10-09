@@ -6,4 +6,6 @@ baxtage_config = r'E:\Dev\baxtage\lineup\static\baxtage.ods'
 amdesp = r'E:\Dev\baxtage\lineup\static\amdespplay.ods'
 
 wkbook = wi.Wkbook(baxtage_config)
+# print(f"{wkbook.sheets=}")
+# wkbook = wi.Wkbook(amdesp)
 ...
