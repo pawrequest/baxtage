@@ -1,7 +1,64 @@
 # import psutil
 # import win32gui
 from dataclasses import dataclass
+from pyexcel_ods3 import get_data
 
+def get_from_ods_sheet(ods_file, sheet, meta=False,
+                       headers=False):  # takes workbook, sheetname, meta and headers as bools, gives dict)
+    wkbook = get_data(ods_file)
+    rows = wkbook[sheet]
+    rows = [row for row in rows if len(row) > 0]
+    rows = strip_strings(rows)  # remove leading and trailing whitepsace from any string fields
+    if meta and headers:
+        meta = [cell for cell in rows[0]]
+        headers = [cell for cell in rows[1]]
+        body = [cell for cell in rows[2:]]
+    elif headers:
+        headers = [cell for cell in rows[0]]
+        body = [cell for cell in rows[1:]]
+    elif meta:
+        meta = [cell for cell in rows[0]]
+        body = [cell for cell in rows[1:]]
+    else:
+        body = [cell for cell in rows[0:]]
+
+    out_dict = {}
+    if meta:
+        meta_dict = {}
+        for c, field in enumerate(meta):
+            if field:
+                if c == 0 or c % 2 == 0:  # if there is text in a cell, and that cell is either the first or an even numbered one
+                    op = {field: meta[c + 1]}  # then it is a meta-heading, so use as a key and the next cell as a value
+                    meta_dict.update(op)  # and add to the meta key in dict
+        out_dict.update({'meta': meta_dict})
+
+    for row in body:
+        row_dict = {}
+        fields = [field for field in row if len(row) > 0]
+        for c, field in enumerate(fields):
+            if headers:  # if we have headers
+                k = headers[c]  # then use them as keys
+                row_dict.update({k: field})
+            else:
+                for d, field in enumerate(fields[1:]):
+                    k = fields[0]  # otherwise we use the first column
+                    row_dict.update({k: field})
+        out_dict.update({row[0]: row_dict})
+    return out_dict
+
+
+class Config:
+    def __init__(self, config_ods, sheetname):  # config should be above radios
+        self.sheetname = sheetname
+        self.config_ods = config_ods
+
+        class RadioConfig:
+            def __init__(self, config_ods_file):
+                sheet_dict = get_from_ods_sheet(config_ods_file, sheetname)
+                for first_column, other_columns in sheet_dict.items():
+                    setattr(self, first_column, other_columns)
+
+        self.radios = RadioConfig(self.config_ods)
 
 
 def printel(*els):  # elementtree elements
@@ -123,50 +180,7 @@ def toCamel(x):  # likeThis
 # print(random_odd.memory())
 '''
 
-'''
-def get_from_ods_sheet(ods_file, sheet, meta=False,
-                       headers=False):  # takes workbook, sheetname, meta and headers as bools, gives dict)
-    wkbook = get_data(ods_file)
-    rows = wkbook[sheet]
-    rows = [row for row in rows if len(row) > 0]
-    rows = strip_strings(rows)  # remove leading and trailing whitepsace from any string fields
-    if meta and headers:
-        meta = [cell for cell in rows[0]]
-        headers = [cell for cell in rows[1]]
-        body = [cell for cell in rows[2:]]
-    elif headers:
-        headers = [cell for cell in rows[0]]
-        body = [cell for cell in rows[1:]]
-    elif meta:
-        meta = [cell for cell in rows[0]]
-        body = [cell for cell in rows[1:]]
-    else:
-        body = [cell for cell in rows[0:]]
 
-    out_dict = {}
-    if meta:
-        meta_dict = {}
-        for c, field in enumerate(meta):
-            if field:
-                if c == 0 or c % 2 == 0:  # if there is text in a cell, and that cell is either the first or an even numbered one
-                    op = {field: meta[c + 1]}  # then it is a meta-heading, so use as a key and the next cell as a value
-                    meta_dict.update(op)  # and add to the meta key in dict
-        out_dict.update({'meta': meta_dict})
-
-    for row in body:
-        row_dict = {}
-        fields = [field for field in row if len(row) > 0]
-        for c, field in enumerate(fields):
-            if headers:  # if we have headers
-                k = headers[c]  # then use them as keys
-                row_dict.update({k: field})
-            else:
-                for d, field in enumerate(fields[1:]):
-                    k = fields[0]  # otherwise we use the first column
-                    row_dict.update({k: field})
-        out_dict.update({row[0]: row_dict})
-    return out_dict
-'''
 
 # backup impoorter class
 '''
