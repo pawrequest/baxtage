@@ -1,6 +1,64 @@
 # import psutil
 # import win32gui
+from dataclasses import dataclass
 from pyexcel_ods3 import get_data
+
+def get_from_ods_sheet(ods_file, sheet, meta=False,
+                       headers=False):  # takes workbook, sheetname, meta and headers as bools, gives dict)
+    wkbook = get_data(ods_file)
+    rows = wkbook[sheet]
+    rows = [row for row in rows if len(row) > 0]
+    rows = strip_strings(rows)  # remove leading and trailing whitepsace from any string fields
+    if meta and headers:
+        meta = [cell for cell in rows[0]]
+        headers = [cell for cell in rows[1]]
+        body = [cell for cell in rows[2:]]
+    elif headers:
+        headers = [cell for cell in rows[0]]
+        body = [cell for cell in rows[1:]]
+    elif meta:
+        meta = [cell for cell in rows[0]]
+        body = [cell for cell in rows[1:]]
+    else:
+        body = [cell for cell in rows[0:]]
+
+    out_dict = {}
+    if meta:
+        meta_dict = {}
+        for c, field in enumerate(meta):
+            if field:
+                if c == 0 or c % 2 == 0:  # if there is text in a cell, and that cell is either the first or an even numbered one
+                    op = {field: meta[c + 1]}  # then it is a meta-heading, so use as a key and the next cell as a value
+                    meta_dict.update(op)  # and add to the meta key in dict
+        out_dict.update({'meta': meta_dict})
+
+    for row in body:
+        row_dict = {}
+        fields = [field for field in row if len(row) > 0]
+        for c, field in enumerate(fields):
+            if headers:  # if we have headers
+                k = headers[c]  # then use them as keys
+                row_dict.update({k: field})
+            else:
+                for d, field in enumerate(fields[1:]):
+                    k = fields[0]  # otherwise we use the first column
+                    row_dict.update({k: field})
+        out_dict.update({row[0]: row_dict})
+    return out_dict
+
+
+class Config:
+    def __init__(self, config_ods, sheetname):  # config should be above radios
+        self.sheetname = sheetname
+        self.config_ods = config_ods
+
+        class RadioConfig:
+            def __init__(self, config_ods_file):
+                sheet_dict = get_from_ods_sheet(config_ods_file, sheetname)
+                for first_column, other_columns in sheet_dict.items():
+                    setattr(self, first_column, other_columns)
+
+        self.radios = RadioConfig(self.config_ods)
 
 
 def printel(*els):  # elementtree elements
@@ -20,130 +78,6 @@ def strip_strings(rows):
             rows[c] = newcell
     return rows
 
-
-class ImportedWkbook:
-    def __init__(self, ods_file, headers=True, meta=False):
-        self.headersb = headers
-        self.metab = meta
-        self.ods_file = ods_file
-        self.wkbook = get_data(ods_file)
-        self.sheets = []
-        for sheet in self.wkbook:
-            self.sheets.append(self.Sheet(self, sheet, meta_bool=meta))
-
-    def __str__(self):
-        return f'Workbook Importer with {len(self.sheets)} sheets'
-
-    def __repr__(self):
-        return f'Workbook Importer with {len(self.sheets)} sheets'
-
-    class Sheet:
-        def __init__(self, parent, sheet_name: str, meta_bool: bool = False, header_bool: bool = True):
-            self.meta_dict = self.MetaDict(header_bool, meta_bool, parent.wkbook, sheet_name)
-            self.run()
-
-        def __str__(self):
-            return f'Sheet Object: {self.meta_dict.sheet_name}'
-
-        def __repr__(self):
-            return f'Sheet Object: {self.meta_dict.sheet_name}'
-
-        class MetaDict:
-            # def __init__(self, header_bool, meta_bool, wkbook, sheet_name):
-            def __init__(self, header_bool, meta_bool, wkbook, sheet_name):
-                self.rows = None
-                self.headers = None
-                self.body = None
-                self.header_bool = header_bool
-                self.meta_bool = meta_bool
-                self.wkbook = wkbook
-                self.sheet_name = sheet_name
-                self.meta_tags = self.MetaTags()
-
-            class MetaTag:
-                def __init__(self, k, v):
-                    setattr(self, k, v)
-
-            class MetaTags:
-                ...
-
-        class SheetItem:
-            def __init__(self, attr_name, attr):
-                setattr(self, attr_name, attr)
-
-        def run(self):
-            setattr(self.meta_dict, 'rows', self.get_rows())
-            self.get_meta_dict()
-            self.get_items()
-
-        def get_items(self):  # makes sheet objects for each cell in body
-            for item in self.meta_dict.body:
-                for c, attribute in enumerate(item):
-                    k = self.meta_dict.headers[c]
-                    v = attribute
-                    obj = self.SheetItem(k, v)
-                    setattr(self, item[0], obj)
-
-        def get_rows(self):  # uses get_data from pyexcel_ods3,  takes sheetname)
-            wkbook = self.meta_dict.wkbook
-            sheet_name = self.meta_dict.sheet_name
-            rows = wkbook[sheet_name]
-            rows = [row for row in rows if len(row) > 0]
-            rows = strip_strings(rows)  # remove leading and trailing whitepsace from any string fields
-            return rows
-
-        def get_meta_dict(self):  # makles self.headers meta and body attrrs
-            metab = self.meta_dict.meta_bool
-            headersb = self.meta_dict.header_bool
-            rows = self.meta_dict.rows
-
-            if metab and headersb:  # assign row-numbers for meta, headers, and start of body
-                meta_row, header_row, body_row = 0, 1, 2
-            elif metab:
-                meta_row, header_row, body_row = 0, None, 1
-            elif headersb:
-                meta_row, header_row, body_row = None, 0, 1
-            else:
-                meta_row, header_row, body_row = None, None, 0
-            if metab:
-                meta_list = self.meta_dict.rows[meta_row]
-                meta_dict = self.get_meta_tags(meta_list)
-                for k,v in meta_dict.items():
-                    meta_tag = self.meta_dict.MetaTag(k,v)
-                    setattr(self.meta_dict.meta_tags, k, meta_tag)
-                # setattr(self.meta_dict, 'meta_tags', meta_row_content)
-
-            if headersb:
-                headers = [cell for cell in rows[header_row]]
-                # self.meta_dict.update({'headers': headers})
-                setattr(self.meta_dict, 'headers', headers)
-            body = [cell for cell in rows[body_row:]]
-            # self.meta_dict.update({'body': body})
-            setattr(self.meta_dict, 'body', body)
-
-        def get_meta_tags(self, meta_list):
-            if not self.meta_dict.meta_bool:
-                return False
-            meta_dict = {}
-            for e, cell in enumerate(meta_list):
-                if cell:
-                    if e == 0 or e % 2 == 0:  # if there is text in a cell, and that cell is either the first or an even numbered one
-                        meta_dict.update({cell: meta_list[e + 1]})
-                        # setattr(self.meta, cell, meta_list[e + 1])
-            # self.meta = meta_dict
-            return meta_dict
-
-        def get_body(self):
-            for row in self.meta_dict.body:
-                cells = [cell for cell in row if len(row) > 0]
-                for c, cell in enumerate(cells):
-                    if self.meta_dict.headers:  # if we have headers
-                        k = self.meta_dict.headers[c]  # then use them as keys
-                        setattr(self, k, cell)
-                    else:
-                        for d, cell in enumerate(cells[1:]):
-                            k = cells[0]  # otherwise we use the first column
-                            setattr(self, k, cell)
 
 
 def toPascal(x):  # LikeThis
@@ -246,55 +180,12 @@ def toCamel(x):  # likeThis
 # print(random_odd.memory())
 '''
 
-'''
-def get_from_ods_sheet(ods_file, sheet, meta=False,
-                       headers=False):  # takes workbook, sheetname, meta and headers as bools, gives dict)
-    wkbook = get_data(ods_file)
-    rows = wkbook[sheet]
-    rows = [row for row in rows if len(row) > 0]
-    rows = strip_strings(rows)  # remove leading and trailing whitepsace from any string fields
-    if meta and headers:
-        meta = [cell for cell in rows[0]]
-        headers = [cell for cell in rows[1]]
-        body = [cell for cell in rows[2:]]
-    elif headers:
-        headers = [cell for cell in rows[0]]
-        body = [cell for cell in rows[1:]]
-    elif meta:
-        meta = [cell for cell in rows[0]]
-        body = [cell for cell in rows[1:]]
-    else:
-        body = [cell for cell in rows[0:]]
 
-    out_dict = {}
-    if meta:
-        meta_dict = {}
-        for c, field in enumerate(meta):
-            if field:
-                if c == 0 or c % 2 == 0:  # if there is text in a cell, and that cell is either the first or an even numbered one
-                    op = {field: meta[c + 1]}  # then it is a meta-heading, so use as a key and the next cell as a value
-                    meta_dict.update(op)  # and add to the meta key in dict
-        out_dict.update({'meta': meta_dict})
-
-    for row in body:
-        row_dict = {}
-        fields = [field for field in row if len(row) > 0]
-        for c, field in enumerate(fields):
-            if headers:  # if we have headers
-                k = headers[c]  # then use them as keys
-                row_dict.update({k: field})
-            else:
-                for d, field in enumerate(fields[1:]):
-                    k = fields[0]  # otherwise we use the first column
-                    row_dict.update({k: field})
-        out_dict.update({row[0]: row_dict})
-    return out_dict
-'''
 
 # backup impoorter class
 '''
 #
-# class ImportedWkbook:
+# class Wkbook:
 #
 #     def __init__(self, ods_file, headers=True, meta=False):
 #         wkbook = get_data(ods_file)
@@ -363,7 +254,7 @@ def get_from_ods_sheet(ods_file, sheet, meta=False,
 #                 setattr(self, k, v)
 
 
-# class ImportedWkbook:
+# class Wkbook:
 #     def __init__(self, ods_file, headers=True, meta=False):
 #         def get_workbook(self):
 #             wkbook = get_data(ods_file)

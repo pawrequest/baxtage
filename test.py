@@ -269,7 +269,7 @@ def get_from_ods_sheet(ods_file, sheet, meta=False,
 # backup impoorter class
 '''
 #
-# class ImportedWkbook:
+# class Wkbook:
 #
 #     def __init__(self, ods_file, headers=True, meta=False):
 #         wkbook = get_data(ods_file)
@@ -338,7 +338,7 @@ def get_from_ods_sheet(ods_file, sheet, meta=False,
 #                 setattr(self, k, v)
 
 
-# class ImportedWkbook:
+# class Wkbook:
 #     def __init__(self, ods_file, headers=True, meta=False):
 #         def get_workbook(self):
 #             wkbook = get_data(ods_file)
