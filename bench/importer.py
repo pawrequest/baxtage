@@ -2,7 +2,7 @@
 # from pyexcel_ods3 import get_data
 import pandas as pd
 
-ods_file = r"E:\Dev\baxtage\lineup\static\baxtage.ods"
+ods_file = r"/lineup/static/baxtage.ods"
 
 # def UseOpenpyxl(file_name):
 #     wb = openpyxl.load_workbook(file_name, read_only=True)
