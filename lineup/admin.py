@@ -1,9 +1,19 @@
 from django.contrib import admin
 
-from .models import *
+from .show import Performance, Show, TechnicalSpec, Instrument, Microphone, Act
+from .people import Person, Role
 
 
-@admin.register(Person, Artist, Performance, Act, Crew)
+@admin.register(Person, Role)
 class PersonAdmin(admin.ModelAdmin):
-    pass
-# Register your models here.
+    ...
+
+
+@admin.register(Show, Act, Instrument, TechnicalSpec, Microphone)
+class ShowAdmin(admin.ModelAdmin):
+    ...
+
+@admin.register(Performance)
+class PerformanceAdmin(admin.ModelAdmin):
+    ...
+

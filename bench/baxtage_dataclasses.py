@@ -4,11 +4,7 @@ from datetime import datetime, timedelta
 from phonenumbers import PhoneNumber
 
 
-@dataclass
-class Organisation:
-    pass
-
-
+##########################################
 @dataclass
 class Person:
     name: str
@@ -22,15 +18,21 @@ class Artist(Person):
 
 
 @dataclass
-class Crew(Person):
+class CrewMember(Person):
     role: str
 
 
+########################################
 @dataclass
 class Act:
     ...
 
 
+@dataclass
+class ActDict:
+    acts: dict[Act]
+
+######################################
 @dataclass
 class TechRider:
     tour_eng: Person
@@ -48,6 +50,8 @@ class Rider:
     hospitality: HospitalityRider
 
 
+###############################################
+
 @dataclass
 class Performance:
     # rank by time... beware midnight!
@@ -56,6 +60,7 @@ class Performance:
     on_stage_time: datetime
     off_stage_time: datetime
     act: Act
+    linecheck_dur: timedelta = None
 
     # optional attrs
     tor_eng: Person = None  # defined in tech rider if there is no tech rider, there is no tour eng
@@ -63,15 +68,17 @@ class Performance:
     hospitality_rider: HospitalityRider = None
     tech_brief: str = None
     hospitality_brief: str = None
-    gig_start_time: datetime = None
 
-    def get_durs(self):
-        gig_start_time = self.gig_start_time if self.gig_start_time else self.on_stage_time
-        on_stage_time = self.on_stage_time
-        off_stage_time = self.off_stage_time
-        self.linecheck_dur: timedelta = gig_start_time - on_stage_time if gig_start_time else None
-        self.gig_dur: timedelta = off_stage_time - gig_start_time if gig_start_time else off_stage_time - on_stage_time
-        self.gig_start_time = gig_start_time if gig_start_time else on_stage_time
+    # calculated attrs
+    on_stage_dur: timedelta = None
+    gig_start_time: datetime = None
+    gig_dur: timedelta = None
+
+    def __post_init__(self):
+        # get durationss
+        self.gig_start_time = self.on_stage_time + self.linecheck_dur if self.linecheck_dur else self.on_stage_time
+        self.gig_dur: timedelta = self.off_stage_time - self.gig_start_time
+
 
 
 @dataclass
@@ -80,10 +87,6 @@ class PerformanceDict:
 
 
 
-
-@dataclass
-class ActDict:
-    acts: dict[Act]
 
 
 @dataclass
@@ -94,3 +97,12 @@ class PersonDict:
 @dataclass
 class ArtistDict:
     artists = dict[Artist]
+
+
+""" FUTURE
+
+@dataclass
+class Organisation:
+    pass
+
+"""

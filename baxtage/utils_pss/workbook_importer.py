@@ -20,11 +20,11 @@ from pyexcel_ods3 import get_data
 
 class Wkbook:
     def __init__(self, ods_file):
-        wkbook: dict = get_data(ods_file)  # empty cells debug
+        wkbook: dict = get_data(ods_file, keep_trailing_empty_cells=True)  # empty cells debug
         wkbook = {sheet_name: [row for row in sheet if row] for sheet_name, sheet in
                   wkbook.items()}  # remove empty rows
         self.meta = WkBookMeta(wkbook)
-        sheets = [Sheet(rows, sheet_name) for sheet_name, rows in wkbook.items()]
+        sheets = [Sheet(sheet, sheet_name) for sheet_name, sheet in wkbook.items()]
         self.sheets = SheetCollection(sheets)
 
     def __str__(self):
@@ -32,34 +32,54 @@ class Wkbook:
 
 
 class Sheet:
-    def __init__(self, rows, sheet_name):
+    def __init__(self, sheet, sheet_name):
         self.sheet_name = sheet_name
-        meta_row = rows[0]
+        meta_row = sheet[0]
         if meta_row[0] == 'cols':
             headers = False
         else:
             headers = True
-        self.meta = SheetMeta(rows, headers=headers)
+        self.meta = SheetMeta(sheet, headers=headers)
         self.meta.sheet_name = sheet_name
-        self.items = {k: SheetItem(k, v) for k, v in self.meta.items_dict.items()}
+        # self.items = {k: SheetItem(k, v) for k, v in self.meta.items_dict.items()}
+        self.items = SheetItemCol(self.meta.items_dict)
 
     def __str__(self):
         return f"{self.sheet_name}"
 
 
 @dataclass
-class SheetItemCol:
-    ...
+class SheetItemCol: # all the items (rows) on a sheet
+    def __init__(self, items_dict:dict):
+        for k, v in items_dict.items():
+            if not k:
+                continue
+            sheet_item = SheetItem(k,v)
+            setattr(self,k,sheet_item)
+
+    def __str__(self):
+        return f"Collection of {len(vars(self))} SheetItems"
 
 
 @dataclass
-class SheetItem:
-    def __init__(self, k, v):
-        setattr(self, k, v)
+class SheetItem: # an item on the sheet
+    def __init__(self, k, v:dict):
+        for x, y in v.items():
+            if not x:
+                continue
+            sheet_prop = SheetProp(x,y)
+            setattr(self, x, sheet_prop)
 
     def __str__(self):
-        return f"{vars(self)}"
+        return f"{len(vars(self))} SheetProps"
 
+@dataclass
+class SheetProp: # a property  (column) of the item
+    def __init__(self, k, v):
+        if k:
+            setattr(self, k, v)
+    def __str__(self):
+        return f"SheetProp - {vars(self)}"
 
 # for k, v in **kwargs.items(): # to allow multiple values?
 
@@ -93,13 +113,14 @@ class SheetMeta:
             # zip useful here?
             for row in self.body:
                 zippy = zip(self.headers, row)
-                print(set(zippy))
+                 print(set(zippy))
             """
 
             for row in self.body:
                 if len(row) == len(self.headers):
-                    row_dict = {header: row[c] for c, header in enumerate(self.headers)}
-                    self.items_dict.update({row[0]: row_dict})
+                    row_dict = {header: row[c] for c, header in enumerate(self.headers) if row[c]}
+                    if row[0]:
+                        self.items_dict.update({row[0]: row_dict})
                 else:
                     print(
                         f"Error - length mismatch, skipped row \n (there are {len(self.headers)} header(s) and {row} has {len(row)} item(s)")

@@ -1,9 +1,25 @@
-from pyexcel_ods3 import get_data
-
-from baxtage.baxtage_dataclasses import *
+# import openpyxl as openpyxl
+# from pyexcel_ods3 import get_data
+import pandas as pd
 
 ods_file = r"E:\Dev\baxtage\lineup\static\baxtage.ods"
 
+# def UseOpenpyxl(file_name):
+#     wb = openpyxl.load_workbook(file_name, read_only=True)
+#     sheet = wb.active
+#     rows = sheet.rows
+#     # first_row = [float(cell.value) for cell in next(rows)]
+#     first_row = [cell.value for cell in next(rows)]
+#     data = []
+#     for row in rows:
+#         record = {}
+#         for key, cell in zip(first_row, row):
+#             if cell.data_type == 's':
+#                 record[key] = cell.value.strip()
+#             else:
+#                 record[key] = float(cell.value)
+#         data.append(record)
+#     return data
 
 def get_artist_dict(wkbook):
     for artist in wkbook['artists'][2:]:
@@ -49,7 +65,10 @@ def make_perfobj_dict(self,wkbook):
 
 class Wkbook:
     def __init__(self, ods_file):
-        wkbook = get_data(ods_file)
+        # wb = openpyxl.load_workbook(ods_file, read_only=True)
+        # wkbook = get_data(ods_file)
+
+        wkbook = pd.read_excel(ods_file, index_col=None, header=None)
         # self.artist_dict = ArtistDict()
         performances = ...
         self.performance_dict = PerformanceDict()
