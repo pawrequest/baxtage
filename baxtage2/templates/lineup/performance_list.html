@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <h2>Performances</h2>
+  <ul>
+    {% for performance in performances %}
+      <li><a href="{% url 'lineup:performance_detail' performance.slug %}">{{ performance.name }}</a></li>
+    {% empty %}
+      <li>No performances yet.</li>
+    {% endfor %}
+  </ul>
+{% endblock %}

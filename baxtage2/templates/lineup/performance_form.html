@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
+{#<select class="js-example-basic-single" name="state">#}
+{#  <option value="AL">Alabama</option>#}
+{#  <option value="WY">Wyoming</option>#}
+{#</select>#}
+{##}
+    <link rel="stylesheet" type="text/css" href="{% static 'css/style.css' %}">
+
+
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Save</button>
+</form>
+
+
+{#    <script>#}
+{#    $(document).ready(function() {#}
+{#        $('.js-example-basic-single').select2({#}
+{#            placeholder: 'Select an option'#}
+{#        });#}
+{#    });#}
+{#</script>#}
+    {{ form.media.js }}
+{% endblock %}

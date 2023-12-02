@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}
+    {{ performance }}
+{% endblock %}
+{% block content %}
+    <div class="container">
+        <main class="pt-5">
+            <div class="row g-3">
+                    <h1 class="mb-0 h4">{{ performance }}</h1>
+{#                    <h2 class="mb-0 h6">{{ "".join([act.name for act in performance.acts]) }}</h2>#}
+                <h2 class="mb-0 h6">
+                  {% for act in performance.acts.all %}
+                    {{ act.name }}
+                  {% endfor %}
+                </h2>
+            </div>
+        </main>
+
+    </div>
+{% endblock %}

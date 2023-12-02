@@ -1,0 +1,32 @@
+{% extends "./base.html" %}
+{% load static %}
+{% block title %}HOME{% endblock %}
+{% block content %}
+
+
+<main>
+  <div class="album py-5 bg-light">
+    <div class="container">
+      <div class="pb-3 h5">All Performances</div>
+      <div class="row row-cols-1 row-cols-sm-2 row-cols-md-5 g-3">
+
+        {% for performance in performances %}
+
+        <div class="col">
+            <div class="card-body">
+              <p class="card-text">
+                <a class="text-dark text-decoration-none" href="{{ performance.get_absolute_url }}">{{ performance }}</a>
+              </p>
+        </div>
+
+        {% endfor %}
+
+      </div>
+    </div>
+  </div>
+  </div>
+
+
+</main>
+
+{% endblock %}
