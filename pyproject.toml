@@ -1,0 +1,57 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "baxtage"
+description = "Gig Support"
+version = "0.0.0"
+authors = [
+    { name = "Paw", email = "Baxtage+pawrequest@users.noreply.github.com" }
+]
+readme = "README.md"
+requires-python = ">= 3.12"
+dependencies = [
+    'pawdantic',
+    'pydantic[email]',
+    'pydantic-settings',
+    'pydantic-extra-types',
+    'fastapi',
+    'sqlmodel',
+    'uvicorn[standard]',
+    'python-dotenv',
+    'httpx',
+    'jinja2',
+    'loguru',
+    'neo4j',
+]
+
+[project.optional-dependencies]
+dev = [
+#    'pyinstaller-hooks-contrib',
+#    'pyinstaller',
+    "pytest",
+    "pytest_asyncio",
+#    'coverage',
+]
+
+#docs = [
+##    "sphinx",
+##    "sphinx-autodoc-typehints",
+##    "sphinx-autodoc2",
+##    "sphinx-rtd-theme",
+##    "sphinx-readme",
+##    "myst-parser",
+##    "sphinx_rtd_dark_mode",
+#]
+
+
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[tool.ruff]
+line-length = 120
+extend-select = ["Q", "RUF100", "UP"]
+flake8-quotes = { inline-quotes = "single", multiline-quotes = "double" }
+format.quote-style = "single"
